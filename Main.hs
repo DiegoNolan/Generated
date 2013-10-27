@@ -21,6 +21,7 @@ import           Config
 import           Event
 import           Mountain
 import           PrimGraphics
+import           Tree
 import           Types
 
 main :: IO ()
@@ -51,11 +52,13 @@ main = do
             gen <- getStdGen
 
             let (mount, ng) = runRand (mountain (-10,3) (10,3) (-4) (gray 0.3)) gen
+                (t, nng) = runRand (tree (0, -4) 0.1 (*0.8) 0.5 10 black) ng
 
             runGame env (State [
-                                 circle (7,5) 1 white
+                                 Object (0,0) (0,0) $ Left $ mkList (square (-10,10) (10,0) blueSteel)
+                               , circle (7,5) 1 (gray 0.8)
                                , mount
-                               , pulley (1,1) 1.5 (3,4) 1 cyan
+                               , t
                                ])
 
             GLFW.destroyWindow win

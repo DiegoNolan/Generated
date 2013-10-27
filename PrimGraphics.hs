@@ -8,6 +8,8 @@ module PrimGraphics
    , mkList
    , convexShape
    , circle
+   , square
+   , circ
    , pulley
    , triangleStrip
    ) where
@@ -66,6 +68,11 @@ circle cent r c = Object cent (r*2,r*2) (Left (mkList $ circ cent r c))
 mkList :: IO () -> IO GL.DisplayList
 mkList f = GL.defineNewList GL.Compile f
 
+square :: Vec2 -> Vec2 -> Color -> IO ()
+square tl@(x1,y1) br@(x2,y2) col = do
+   GL.color col
+   convexShape [tl,(x2,y1),br,(x1,y2)] 
+
 circ :: Vec2 -> Float -> Color -> IO ()
 circ (xrel,yrel) r c = do
       GL.color c
@@ -97,15 +104,14 @@ triangleStrip xs = GL.renderPrimitive GL.Triangles $ triStrip xs
             triStrip ((x2,y2):(x3,y3):rest)
          triStrip _ = return ()
 
-pulley :: Vec2 -> Float -> Vec2 -> Float -> Color -> Object
+pulley :: Vec2 -> Float -> Vec2 -> Float -> Color -> IO ()
 pulley c1 r1 c2 r2 c
       | r1 < r2   = pulley c2 r2 c1 r1 c
-      | otherwise = Object c1 (r1,r1) (Left $ mkList $ do
-                        circ c1 r1 c
-                        circ c2 r2 c
-                        GL.color c
-                        convexShape [f,g,h,e]
-                     )
+      | otherwise = do
+            circ c1 r1 c
+            circ c2 r2 c
+            GL.color c
+            convexShape [f,g,h,e]
    where v = c2 `sub` c1
          p = mag v
          h_theta = ( acos $ (r1 - r2) / p )

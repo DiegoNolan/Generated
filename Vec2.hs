@@ -42,3 +42,6 @@ setMag v@(x,y) nm = ( (x / m) * nm, (y / m) * nm )
 fromX :: Vec2 -> Float
 fromX = angle (1,0)
 
+fromY :: Vec2 -> Float
+fromY = angle (0,1)
+
