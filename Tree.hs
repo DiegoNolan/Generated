@@ -4,6 +4,7 @@ module Tree
    (
      TreeSettings (..)
    , tree
+   , grassPatch
    , defTree
    ) where
 
@@ -160,5 +161,71 @@ nodes left lstSplit p
                            | p < one   = 1
                            | p < two   = 2
                            | otherwise = 3
+
+-- | Grass Stuff --------------------------------------------------------------
+
+-- a blade of crass can just be like a small tree with no branches, so
+-- we'll use that
+
+grassPatch :: RandomGen g => Vec2 -> Vec2 -> Color -> Rand g Object
+grassPatch left right col = do
+
+   let cnt = round $ ((right^._1) - (left^._1)) * 20
+
+   blades <- patch left right cnt 0.3 0.6
+   
+   return $ Object (0,0) (0,0) $ Left $ mkList $ mapM_ (`proccessTree` col) blades
+
+patch :: RandomGen g =>
+         Vec2  -> -- left
+         Vec2  -> -- right
+         Int   -> -- blades
+         Float -> -- min height
+         Float -> -- top height
+         Rand g [Tree]
+patch (x1,y1) (x2,y2) cnt minH maxH = do
+
+   let segs = 5
+
+   segHeights <- (map (\h -> h / fromIntegral segs)) . (take cnt) <$>
+         getRandomRs (minH, maxH)
+
+   let xgap = (x2 - x1) / fromIntegral cnt
+       ygap = (y2 - y1) / fromIntegral cnt
+       xs = [x1,x1+xgap..]
+       ys = [y1,y1+ygap..]
+       points = take cnt $ zip xs ys
+       pHs = zip points segHeights
+
+   mapM (\(p,h) -> blade p segs 0.022 (*0.8) h 0) pHs
+
+blade :: RandomGen g => 
+         Vec2  -> -- starting position
+         Int   -> -- segments
+         Float -> -- radius
+         (Float -> Float) ->
+         Float -> -- segment height
+         Float -> -- angle
+         Rand g Tree
+blade p 0 r _ _ _ = return $ Tree (p,r) []
+blade start cnt r f segH ang = do
+
+   nAng <- getRandomR $ over both (+ang) (-pi/8,pi/8)
+
+   let nPos = start `add` rotate (0,segH) nAng
+
+   nextBlade <- blade nPos (cnt-1) (f r) f segH nAng
+
+   return $ Tree (start,r) [nextBlade]
+
+
+
+
+
+
+
+
+
+
 
 

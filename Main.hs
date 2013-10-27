@@ -52,8 +52,11 @@ main = do
             gen <- getStdGen
 
             let (mount, ng) = runRand (mountain (-10,3) (10,3) (-4) (gray 0.3)) gen
-                (t, nng) = runRand (defTree (-4,-4) black) ng
-                (t2, _) = runRand (defTree (4,-4) black) nng
+                (t, gen1) = runRand (defTree (-4,-4) black) ng
+                (t2, gen2) = runRand (defTree (4,-4) black) gen1
+                (t3, gen3) = runRand (defTree (-8,-4) black) gen2
+                (t4, gen4) = runRand (defTree (8,-4) black) gen3
+                (grass, _) = runRand (grassPatch (-12,-4) (12,-4) black) gen4
 
             runGame env (State [
                                  Object (0,0) (0,0) $ Left $ mkList (square (-10,10) (10,0) blueSteel)
@@ -61,6 +64,9 @@ main = do
                                , mount
                                , t
                                , t2
+                               , t3
+                               , t4
+                               , grass
                                ]
                         )
 
