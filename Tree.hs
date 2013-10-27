@@ -6,6 +6,7 @@ module Tree
    , tree
    , grassPatch
    , defTree
+   , defLeaf
    ) where
 
 import           Control.Lens
@@ -162,6 +163,49 @@ nodes left lstSplit p
                            | p < two   = 2
                            | otherwise = 3
 
+-- | Leaf stuff ---------------------------------------------------------------
+
+-- leafs can just be goofy trees
+
+defLeaf ::  RandomGen g =>
+            Vec2        -> -- Start position
+            Float       -> -- angle
+            Color       -> -- color
+            Rand g Object
+defLeaf position angle color = do
+
+   let radFunc 1 = 0.01
+       radFunc 2 = 0.04
+       radFunc 3 = 0.06
+       radFunc 4 = 0.07
+       radFunc 5 = 0.07
+       radFunc 6 = 0.06
+       radFunc 7 = 0.04
+       radFunc _ = 0.00001
+
+   leaf <- cherryLeaf position 7 0.001 radFunc 0.15 angle
+
+   return $ Object position (0,0) $ Left $ mkList (proccessTree leaf color)
+
+cherryLeaf ::  RandomGen g =>
+               Vec2        -> -- start position
+               Int         -> -- segments left
+               Float       -> -- radius
+               (Int -> Float) -> -- function to change the radius, gen -> new rad
+               Float       -> -- segment height
+               Float       -> -- angle
+               Rand g Tree
+cherryLeaf start 0 r _ _ _ = return $ Tree (start,r) []
+cherryLeaf start cnt r f segH ang = do
+
+   nAng <- getRandomR $ over both (+ang) (-pi/8,pi/8)
+   
+   let nPos = start `add` rotate (0,segH) nAng
+
+   nextPart <-  cherryLeaf nPos (cnt-1) (f cnt) f segH nAng
+
+   return $ Tree (start,r) [nextPart]
+
 -- | Grass Stuff --------------------------------------------------------------
 
 -- a blade of crass can just be like a small tree with no branches, so
@@ -174,7 +218,8 @@ grassPatch left right col = do
 
    blades <- patch left right cnt 0.3 0.6
    
-   return $ Object (0,0) (0,0) $ Left $ mkList $ mapM_ (`proccessTree` col) blades
+   return $ Object (0,0) (0,0) $
+      Left $ mkList ( mapM_ (`proccessTree` col) blades)
 
 patch :: RandomGen g =>
          Vec2  -> -- left
@@ -217,7 +262,6 @@ blade start cnt r f segH ang = do
    nextBlade <- blade nPos (cnt-1) (f r) f segH nAng
 
    return $ Tree (start,r) [nextBlade]
-
 
 
 
