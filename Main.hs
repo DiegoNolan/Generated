@@ -52,14 +52,17 @@ main = do
             gen <- getStdGen
 
             let (mount, ng) = runRand (mountain (-10,3) (10,3) (-4) (gray 0.3)) gen
-                (t, nng) = runRand (tree (0, -4) 0.1 (*0.8) 0.5 10 black) ng
+                (t, nng) = runRand (defTree (-4,-4) black) ng
+                (t2, _) = runRand (defTree (4,-4) black) nng
 
             runGame env (State [
                                  Object (0,0) (0,0) $ Left $ mkList (square (-10,10) (10,0) blueSteel)
                                , circle (7,5) 1 (gray 0.8)
                                , mount
                                , t
-                               ])
+                               , t2
+                               ]
+                        )
 
             GLFW.destroyWindow win
       GLFW.terminate
