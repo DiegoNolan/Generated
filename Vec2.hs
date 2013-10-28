@@ -27,7 +27,8 @@ dot :: Vec2 -> Vec2 -> Float
 dot (Vec2 u1 u2) (Vec2 v1 v2) = u1*v1 + u2*v2
 
 angle :: Vec2 -> Vec2 -> Float
-angle u@(Vec2 u1 u2) v@(Vec2 v1 v2) = (signum t) * ( acos $ dot u v / ( mag u * mag v) )
+angle u@(Vec2 u1 u2) v@(Vec2 v1 v2) =
+      (signum t) * ( acos $ dot u v / ( mag u * mag v) )
    where t = u1*v2 - u2*v1
 
 rotate :: Vec2 -> Float -> Vec2

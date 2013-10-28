@@ -9,6 +9,7 @@ import           Control.Monad -- (when, unless, void)
 import           Control.Monad.RWS.Strict (RWST, ask, asks, evalRWST, get,
    liftIO, modify, put)
 import           Control.Monad.Random (runRand, Rand)
+import           Data.List (foldl')
 import           System.Random
 
 import qualified Graphics.UI.GLFW as GLFW
@@ -25,6 +26,13 @@ import           Tree
 import           Types
 import           Vec2
 
+runGroup :: RandomGen g =>
+            [Rand g a] ->
+            g ->
+            ([a],g)
+runGroup toRuns gen = over _1 reverse $ foldl' inner ([],gen) toRuns
+      where inner (os,lg) toRun = let (o,ng) = runRand toRun lg
+                                  in (o:os,ng)
 main :: IO ()
 main = do
    let width = screenWidth
@@ -52,26 +60,21 @@ main = do
 
             gen <- getStdGen
 
-            let (mount, ng) = runRand (mountain (Vec2 (-10) 3) (Vec2 10 3) (-4) (gray 0.3)) gen
-                (t, gen1) = runRand (defTree (Vec2 (-4) (-4)) black) ng
-                (t2, gen2) = runRand (defTree (Vec2 4 (-4)) black) gen1
-                -- (t3, gen3) = runRand (defTree (-8,-4) black) gen2
-                -- (t4, gen4) = runRand (defTree (8,-4) black) gen3
-                (grass, _) = runRand (grassPatch (Vec2 (-12) (-4)) (Vec2 12 (-4)) black) gen2
-                (leaf, _) = runRand (defLeaf (Vec2 0 0) 0 red) gen2
+            let toRuns =
+                  [
+                    (mountain (Vec2 (-10) 3) (Vec2 10 3) (-4) (gray 0.3))
+                  , (defTree (Vec2 (-4) (-4)) black)
+                  --, (defTree (Vec2 4 (-4)) black)
+                  --, (defTree (Vec2 (-8) (-4)) black)
+                  --, (defTree (Vec2 8 (-4)) black)
+                  , (grassPatch (Vec2 (-12) (-4)) (Vec2 12 (-4)) black)
+                  , (defLeaf (Vec2 0 0) 0 red)
+                  ]
+                background = (square (Vec2 (-10) 10) (Vec2 10 0) blueSteel)
+                moon = circle (Vec2 7 4) 1 (gray 0.8)
+                (graphics,ng) = runGroup toRuns gen
 
-            runGame env (State [
-                                 square (Vec2 (-10) 10) (Vec2 10 0) blueSteel
-                               , circle (Vec2 7 5) 1 (gray 0.8)
-                               , mount
-                               , t
-                               , t2
-                               --, t3
-                               --, t4
-                               , grass
-                               , leaf
-                               ]
-                        )
+            runGame env (State (background:moon:graphics))
 
             GLFW.destroyWindow win
       GLFW.terminate
@@ -93,6 +96,12 @@ run = do
    processEvents
 
    mt <- liftIO GLFW.getTime
+
+   case mt of
+      Nothing -> return ()
+      Just t  -> do
+         liftIO $ putStrLn (show t)
+
    q <- liftIO $ GLFW.windowShouldClose win
    unless q run
 
