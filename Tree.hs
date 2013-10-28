@@ -65,7 +65,7 @@ mkTree p prevA r f h num lstSplit = do
 
    angles <- take n <$> getRandomRs (angRange prevA num)
 
-   let nextps = map (\a -> p `add` rotate (0,h) a) angles
+   let nextps = map (\a -> p `add` rotate (Vec2 0 h) a) angles
        psAngs = zip nextps angles
 
    trees <- mapM (\(np,na) -> mkTree np na (f r) f h (num-1) nSplit) psAngs
@@ -133,7 +133,7 @@ cherryLeaf start cnt r f segH ang = do
 
    nAng <- getRandomR $ over both (+ang) (-pi/8,pi/8)
    
-   let nPos = start `add` rotate (0,segH) nAng
+   let nPos = start `add` rotate (Vec2 0 segH) nAng
 
    nextPart <-  cherryLeaf nPos (cnt-1) (f cnt) f segH nAng
 
@@ -145,9 +145,9 @@ cherryLeaf start cnt r f segH ang = do
 -- we'll use that
 
 grassPatch :: RandomGen g => Vec2 -> Vec2 -> Color -> Rand g DelayedGraphic
-grassPatch left right col = do
+grassPatch left@(Vec2 xl _) right@(Vec2 xr _) col = do
 
-   let cnt = round $ ((right^._1) - (left^._1)) * 20
+   let cnt = round $ (xr - xl) * 20
 
    blades <- patch left right cnt 0.3 0.6
    
@@ -160,7 +160,7 @@ patch :: RandomGen g =>
          Float -> -- min height
          Float -> -- top height
          Rand g [Tree]
-patch (x1,y1) (x2,y2) cnt minH maxH = do
+patch (Vec2 x1 y1) (Vec2 x2 y2) cnt minH maxH = do
 
    let segs = 5
 
@@ -171,7 +171,7 @@ patch (x1,y1) (x2,y2) cnt minH maxH = do
        ygap = (y2 - y1) / fromIntegral cnt
        xs = [x1,x1+xgap..]
        ys = [y1,y1+ygap..]
-       points = take cnt $ zip xs ys
+       points = take cnt $ zipWith Vec2 xs ys
        pHs = zip points segHeights
 
    mapM (\(p,h) -> blade p segs 0.022 (*0.8) h 0) pHs
@@ -189,7 +189,7 @@ blade start cnt r f segH ang = do
 
    nAng <- getRandomR $ over both (+ang) (-pi/8,pi/8)
 
-   let nPos = start `add` rotate (0,segH) nAng
+   let nPos = start `add` rotate (Vec2 0 segH) nAng
 
    nextBlade <- blade nPos (cnt-1) (f r) f segH nAng
 

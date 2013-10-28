@@ -23,6 +23,7 @@ import           Mountain
 import           PrimGraphics
 import           Tree
 import           Types
+import           Vec2
 
 main :: IO ()
 main = do
@@ -51,17 +52,17 @@ main = do
 
             gen <- getStdGen
 
-            let (mount, ng) = runRand (mountain (-10,3) (10,3) (-4) (gray 0.3)) gen
-                (t, gen1) = runRand (defTree (-4,-4) black) ng
-                (t2, gen2) = runRand (defTree (4,-4) black) gen1
+            let (mount, ng) = runRand (mountain (Vec2 (-10) 3) (Vec2 10 3) (-4) (gray 0.3)) gen
+                (t, gen1) = runRand (defTree (Vec2 (-4) (-4)) black) ng
+                (t2, gen2) = runRand (defTree (Vec2 4 (-4)) black) gen1
                 -- (t3, gen3) = runRand (defTree (-8,-4) black) gen2
                 -- (t4, gen4) = runRand (defTree (8,-4) black) gen3
-                (grass, _) = runRand (grassPatch (-12,-4) (12,-4) black) gen2
-                (leaf, _) = runRand (defLeaf (0,0) 0 red) gen2
+                (grass, _) = runRand (grassPatch (Vec2 (-12) (-4)) (Vec2 12 (-4)) black) gen2
+                (leaf, _) = runRand (defLeaf (Vec2 0 0) 0 red) gen2
 
             runGame env (State [
-                                 square (-10,10) (10,0) blueSteel
-                               , circle (7,5) 1 (gray 0.8)
+                                 square (Vec2 (-10) 10) (Vec2 10 0) blueSteel
+                               , circle (Vec2 7 5) 1 (gray 0.8)
                                , mount
                                , t
                                , t2

@@ -56,16 +56,16 @@ circle :: Vec2 -> Float -> Color -> DelayedGraphic
 circle cent r c = Left (mkList $ circ cent r c)
 
 square :: Vec2 -> Vec2 -> Color -> DelayedGraphic
-square tl@(x1,y1) br@(x2,y2) col =
+square tl@(Vec2 x1 y1) br@(Vec2 x2 y2) col =
    Left (mkList $ do
             GL.color col
-            convexShape [tl,(x2,y1),br,(x1,y2)]
+            convexShape [tl,(Vec2 x2 y1),br,(Vec2 x1 y2)]
         )
 -------------------------------------------------------------------------------
 -- | Functions that can be passed to the mkList function to creat Display lists
 -------------------------------------------------------------------------------
 circ :: Vec2 -> Float -> Color -> IO ()
-circ (xrel,yrel) r c = do
+circ (Vec2 xrel yrel) r c = do
       GL.color c
       GL.renderPrimitive GL.TriangleFan $ do
          vertex x y 0
@@ -79,7 +79,7 @@ circ (xrel,yrel) r c = do
 convexShape :: [Vec2] -> IO ()
 convexShape (x:y:z:rs) = GL.renderPrimitive GL.Triangles $ conv x y (z:rs)
    where conv _ _ [] = return ()
-         conv f@(x1,y1) l@(x2,y2) ((r@(x3,y3)):rest) = do
+         conv f@(Vec2 x1 y1) l@(Vec2 x2 y2) ((r@(Vec2 x3 y3)):rest) = do
             vertex (toSX x1) (toSY y1) 0
             vertex (toSX x2) (toSY y2) 0
             vertex (toSX x3) (toSY y3) 0
@@ -88,11 +88,11 @@ convexShape _  = error "Too few points"
 
 triangleStrip :: [Vec2] -> IO ()
 triangleStrip xs = GL.renderPrimitive GL.Triangles $ triStrip xs
-   where triStrip ((x1,y1):(x2,y2):(x3,y3):rest) = do
+   where triStrip ((Vec2 x1 y1):(Vec2 x2 y2):(Vec2 x3 y3):rest) = do
             vertex (toSX x1) (toSY y1) 0
             vertex (toSX x2) (toSY y2) 0
             vertex (toSX x3) (toSY y3) 0
-            triStrip ((x2,y2):(x3,y3):rest)
+            triStrip ((Vec2 x2 y2):(Vec2 x3 y3):rest)
          triStrip _ = return ()
 
 pulley :: Vec2 -> Float -> Vec2 -> Float -> Color -> IO ()

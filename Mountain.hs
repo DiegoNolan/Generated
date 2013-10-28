@@ -19,7 +19,7 @@ weave xs [] = xs
 weave [] ys = ys
 
 mountain :: RandomGen g => Vec2 -> Vec2 -> Float -> Color -> Rand g DelayedGraphic
-mountain tl@(x1,y1) tr@(x2,y2) bottom color = do
+mountain tl@(Vec2 x1 y1) tr@(Vec2 x2 y2) bottom color = do
    
    let left = min x1 y2
        right = max x1 x2
@@ -31,8 +31,8 @@ mountain tl@(x1,y1) tr@(x2,y2) bottom color = do
    let l = length ys
        gap = dist / ( fromIntegral $ l - 1 )
        xs = take l $ [left,(left+gap)..]
-       topPoints = zip xs ys ++ [(right,bottom),(left,bottom)]
-       botPoints = map (\x -> (x,bottom)) xs
+       topPoints = zipWith Vec2 xs ys ++ [(Vec2 right bottom),(Vec2 left bottom)]
+       botPoints = map (`Vec2` bottom) xs
        points = weave topPoints botPoints
 
    return $ Left $ mkList $ do
