@@ -20,7 +20,7 @@ data Env = Env
 
 data State = State
    {
-     _objects  :: [Object]
+     _graphics  :: [DelayedGraphic]
    }
 
 data Event =

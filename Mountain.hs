@@ -18,7 +18,7 @@ weave (x:xs) (y:ys) = x : y : weave xs ys
 weave xs [] = xs
 weave [] ys = ys
 
-mountain :: RandomGen g => Vec2 -> Vec2 -> Float -> Color -> Rand g Object
+mountain :: RandomGen g => Vec2 -> Vec2 -> Float -> Color -> Rand g DelayedGraphic
 mountain tl@(x1,y1) tr@(x2,y2) bottom color = do
    
    let left = min x1 y2
@@ -35,9 +35,9 @@ mountain tl@(x1,y1) tr@(x2,y2) bottom color = do
        botPoints = map (\x -> (x,bottom)) xs
        points = weave topPoints botPoints
 
-   return $ (Object (0,0) (0,0) $ Left $ mkList $ do
+   return $ Left $ mkList $ do
             GL.color color
-            triangleStrip points)
+            triangleStrip points
 
 mpd :: RandomGen g => Float   -> -- left
                       Float   -> -- right

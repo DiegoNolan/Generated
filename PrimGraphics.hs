@@ -2,9 +2,7 @@
 module PrimGraphics
    (
      DelayedGraphic
-   , Object (..)
    , renderDelayed
-   , renderObject
    , mkList
    , convexShape
    , circle
@@ -24,55 +22,48 @@ import           Color
 import           Config
 import           Vec2
 
+-- | Delayed Graphic type -----------------------------------------------------
+
+-- Left side is an io action to create a display list
 type DelayedGraphic = Either (IO GL.DisplayList) GL.DisplayList
-
-data AABB = AABB
-   {
-     left   :: !Float
-   , right  :: !Float
-   , top    :: !Float
-   , bottom :: !Float
-   }
-
--- Objects are positioned at their bottom center
-data Object = Object
-   {
-     pos    :: Vec2
-   , size   :: Vec2
-   , gra    :: DelayedGraphic
-   }
-
-circle_sides :: Int
-circle_sides = 50
 
 renderDelayed :: DelayedGraphic -> IO DelayedGraphic
 renderDelayed (Left f) = f >>= (renderDelayed . Right)
 renderDelayed dg@(Right d) = GL.callList d >> return dg
 
-renderObject :: Object -> IO Object
-renderObject (Object p z g) = renderDelayed g >>= return . Object p z
+circle_sides :: Int
+circle_sides = 50
 
-
+--  conversions to screen coordinates
 toSX :: Float -> GL.GLfloat
 toSX = realToFrac . scaling
 
 toSY :: Float -> GL.GLfloat
 toSY y = aspectRatio * ( realToFrac $ scaling y)
 
+-- helper function for a opengl vertex of floats
 vertex :: GL.GLfloat -> GL.GLfloat -> GL.GLfloat -> IO ()
 vertex x y z = GL.vertex $ GL.Vertex3 x y z
 
-circle :: Vec2 -> Float -> Color -> Object
-circle cent r c = Object cent (r*2,r*2) (Left (mkList $ circ cent r c))
-
+-- hepler funciton for creating display lists
 mkList :: IO () -> IO GL.DisplayList
 mkList f = GL.defineNewList GL.Compile f
 
-square :: Vec2 -> Vec2 -> Color -> IO ()
-square tl@(x1,y1) br@(x2,y2) col = do
-   GL.color col
-   convexShape [tl,(x2,y1),br,(x1,y2)] 
+------------------------------------------------------------------------------
+-- | Functions that create Delayed Graphics ----------------------------------
+------------------------------------------------------------------------------
+circle :: Vec2 -> Float -> Color -> DelayedGraphic
+circle cent r c = Left (mkList $ circ cent r c)
 
+square :: Vec2 -> Vec2 -> Color -> DelayedGraphic
+square tl@(x1,y1) br@(x2,y2) col =
+   Left (mkList $ do
+            GL.color col
+            convexShape [tl,(x2,y1),br,(x1,y2)]
+        )
+-------------------------------------------------------------------------------
+-- | Functions that can be passed to the mkList function to creat Display lists
+-------------------------------------------------------------------------------
 circ :: Vec2 -> Float -> Color -> IO ()
 circ (xrel,yrel) r c = do
       GL.color c

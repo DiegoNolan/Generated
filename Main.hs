@@ -60,7 +60,7 @@ main = do
                 (leaf, _) = runRand (defLeaf (0,0) 0 red) gen2
 
             runGame env (State [
-                                 Object (0,0) (0,0) $ Left $ mkList (square (-10,10) (10,0) blueSteel)
+                                 square (-10,10) (10,0) blueSteel
                                , circle (7,5) 1 (gray 0.8)
                                , mount
                                , t
@@ -101,8 +101,8 @@ draw = do
    env <- ask
    state <- get
 
-   newObjects <- liftIO $ mapM renderObject (state^.objects)
+   newGraphics <- liftIO $ mapM renderDelayed (state^.graphics)
 
-   objects .= newObjects
+   graphics .= newGraphics
 
 

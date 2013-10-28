@@ -2,8 +2,7 @@
 
 module Tree
    (
-     TreeSettings (..)
-   , tree
+     tree
    , grassPatch
    , defTree
    , defLeaf
@@ -17,45 +16,9 @@ import           Color
 import           Vec2
 import           PrimGraphics
 
-data Tree = Tree (Vec2,Float) [Tree]
+data Tree = Tree (Vec2,Float) [Tree] deriving Show
 
-data TreeSettings = TreeSettings
-      {                 -- gen    lastsplit
-        _chanceToSplit  :: Int -> Int -> Float -> Int
-                        -- generation, previous Angle
-      , _angleRange     :: Int -> Float -> (Float, Float)
-      , _segHeight      :: Float
-      , _totalGens      :: Int
-      , _radiusChange   :: Float -> Float
-      }
-
-makeLenses ''TreeSettings
-
-defaultTree :: TreeSettings
-defaultTree = TreeSettings
-                  chToSp
-                  angRng
-                  0.7
-                  2
-                  (*0.8)
-   where chToSp g l p
-            | g < 3        = if l == 0 then chance 1 1 p else chance 0.9 1 p 
-            | g < 5        = if l <= 3 then chance 0.7 0.9 p else chance 0.5 0.7 p
-            | otherwise    = if l <= 3 then chance 0.5 0.7 p else chance 0.4 0.6 p
-         chance one two p
-            | p < one   = 1
-            | p < two   = 2
-            | otherwise = 3
-
-         angRng g pA
-            | g < 10    = (pi/5,pi/5)
-            | otherwise = (pi/6,pi/6)
-               
-
-instance Show Tree where
-   show (Tree p rest) = show p ++ "\n" ++ (concatMap show rest)
-
-defTree :: RandomGen g => Vec2 -> Color -> Rand g Object
+defTree :: RandomGen g => Vec2 -> Color -> Rand g DelayedGraphic
 defTree start col = tree start 0.17 (*0.89) 0.3 25 col
 
 tree :: RandomGen g =>  Vec2  -> -- Start position
@@ -64,12 +27,11 @@ tree :: RandomGen g =>  Vec2  -> -- Start position
                         Float -> -- y step per notch
                         Int   -> -- Notches left
                         Color -> 
-                        Rand g Object
+                        Rand g DelayedGraphic
 tree p r f h n col = do
    t <- mkTree p 0 r f h n 0
-   -- t <- mkTreeSet defaultTree p 0.1 0 0 0
 
-   return $ Object p (r,r) $ Left $ mkList ( proccessTree t col )
+   return $ Left $ mkList ( proccessTree t col )
 
 proccessTree :: Tree -> Color -> IO ()
 proccessTree (Tree (p,r) []) col = circ p r col
@@ -84,35 +46,6 @@ proccessTree (Tree (p,r) ts) col = do
    mapM_ (\(b,s) -> pulley p r b s col) prs
 
    mapM_ (\t -> proccessTree t col) ts
-
-mkTreeSet ::   RandomGen g    =>
-               TreeSettings   -> -- tree settings
-               Vec2           -> -- position
-               Float          -> -- radius
-               Float          -> -- angle
-               Int            -> -- generation
-               Int            -> -- last split
-               Rand g Tree
-mkTreeSet settings p ang r gen last = do
-
-   if gen >= settings^.totalGens
-   then return $ Tree (p,r) []
-   else do
-
-      splitChance <- getRandom
-
-      let n = (settings^.chanceToSplit) gen last splitChance
-          lsp = if n == 1 then last+1 else 0
-
-      angles <- take n <$> getRandomRs ((settings^.angleRange) gen ang)
-
-      let nextps = map (\a -> p `add` rotate (0,settings^.segHeight) a) angles
-          psAngs = zip nextps angles
-          nRad = (settings^.radiusChange) r
-
-      trees <- mapM (\(np,na) -> mkTreeSet settings np nRad na (gen+1) lsp) psAngs
-
-      return $ Tree (p,r) trees
 
 mkTree :: RandomGen g =>   Vec2   -> -- Start position
                            Float  -> -- previous angle
@@ -139,9 +72,9 @@ mkTree p prevA r f h num lstSplit = do
 
    return $ Tree (p,r) trees
 
-angRange ::  Float -> -- prev angle
-               Int   -> -- segments left
-               (Float, Float)
+angRange :: Float -> -- prev angle
+            Int   -> -- segments left
+            (Float, Float)
 angRange prevAng left
    | left < 5     = curb $ over both (+prevAng) (-pi/5, pi/5) 
    | left < 10    = curb $ over both (+prevAng) (-pi/8, pi/8)
@@ -171,7 +104,7 @@ defLeaf ::  RandomGen g =>
             Vec2        -> -- Start position
             Float       -> -- angle
             Color       -> -- color
-            Rand g Object
+            Rand g DelayedGraphic
 defLeaf position angle color = do
 
    let radFunc 1 = 0.01
@@ -185,7 +118,7 @@ defLeaf position angle color = do
 
    leaf <- cherryLeaf position 7 0.001 radFunc 0.15 angle
 
-   return $ Object position (0,0) $ Left $ mkList (proccessTree leaf color)
+   return $ Left $ mkList (proccessTree leaf color)
 
 cherryLeaf ::  RandomGen g =>
                Vec2        -> -- start position
@@ -211,15 +144,14 @@ cherryLeaf start cnt r f segH ang = do
 -- a blade of crass can just be like a small tree with no branches, so
 -- we'll use that
 
-grassPatch :: RandomGen g => Vec2 -> Vec2 -> Color -> Rand g Object
+grassPatch :: RandomGen g => Vec2 -> Vec2 -> Color -> Rand g DelayedGraphic
 grassPatch left right col = do
 
    let cnt = round $ ((right^._1) - (left^._1)) * 20
 
    blades <- patch left right cnt 0.3 0.6
    
-   return $ Object (0,0) (0,0) $
-      Left $ mkList ( mapM_ (`proccessTree` col) blades)
+   return $ Left $ mkList ( mapM_ (`proccessTree` col) blades)
 
 patch :: RandomGen g =>
          Vec2  -> -- left
