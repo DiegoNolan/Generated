@@ -8,9 +8,10 @@ import           Control.Monad.RWS.Strict (RWST)
 
 import qualified Graphics.UI.GLFW as GLFW
 
+import           Animation
 import           PrimGraphics
 
-type GameState = RWST Env () State IO
+type GameState = RWST Env [Double] State IO
 
 data Env = Env
    {
@@ -21,6 +22,7 @@ data Env = Env
 data State = State
    {
      _graphics  :: [DelayedGraphic]
+   , _animations :: [Animation]
    }
 
 data Event =

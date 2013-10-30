@@ -1,9 +1,11 @@
-{-# LANGUAGE TemplateHaskell #-}
 
 module Tree
    (
-     tree
+     Tree (..)
+   , tree
+   , proccessTree
    , grassPatch
+   , mkTree
    , defTree
    , defLeaf
    ) where
@@ -29,7 +31,7 @@ tree :: RandomGen g =>  Vec2  -> -- Start position
                         Color -> 
                         Rand g DelayedGraphic
 tree p r f h n col = do
-   t <- mkTree p 0 r f h n 0
+   t <- mkTree p 0 r f h n 0 
 
    return $ Left $ mkList ( proccessTree t col )
 

@@ -6,6 +6,7 @@ import           Control.Lens
 import           Control.Concurrent.STM (TQueue, atomically, newTQueueIO,
    tryReadTQueue, writeTQueue)
 import           Control.Monad -- (when, unless, void)
+import           Control.Monad.Writer
 import           Control.Monad.RWS.Strict (RWST, ask, asks, evalRWST, get,
    liftIO, modify, put)
 import           Control.Monad.Random (runRand, Rand)
@@ -16,6 +17,8 @@ import qualified Graphics.UI.GLFW as GLFW
 import qualified Graphics.Rendering.OpenGL as GL
 import           Graphics.Rendering.OpenGL (($=))
 
+import           Animation
+import           AnimatedTree
 import           Callback
 import           Color
 import           Config
@@ -73,21 +76,38 @@ main = do
                 background = (square (Vec2 (-10) 10) (Vec2 10 0) blueSteel)
                 moon = circle (Vec2 7 4) 1 (gray 0.8)
                 (graphics,ng) = runGroup toRuns gen
+                (animTree,nng) = runRand (animatedTree (Vec2 4 (-4)) black) ng
 
-            runGame env (State (background:moon:graphics))
+            runGame env (State (background:moon:graphics) [animTree])
 
             GLFW.destroyWindow win
       GLFW.terminate
 
 runGame :: Env -> State -> IO ()
-runGame env state = void $ evalRWST run env state
+runGame env state = do
+   (_,log) <- evalRWST run env state
+
+   case log of
+      [] -> return ()
+      _  -> do
+         putStrLn $ "Average frame rate " ++
+            (show $ (fromIntegral $ length log) / ((last log) - (head log)))
+         let n = 20
+             dropN = drop n log
+         putStrLn $ "Framerate after dropping first " ++ show n ++ " : " ++
+            (show $ (fromIntegral $ length dropN) / ((last dropN) - (head dropN)))
 
 run :: GameState ()
 run = do
 
    win <- asks _envWindow
+   mt <- liftIO GLFW.getTime
 
-   draw
+   case mt of
+      Nothing -> draw 0
+      Just t  -> do
+         tell [t]
+         draw t
 
    liftIO $ do
       GLFW.swapBuffers win
@@ -95,23 +115,16 @@ run = do
       GLFW.pollEvents
    processEvents
 
-   mt <- liftIO GLFW.getTime
-
-   case mt of
-      Nothing -> return ()
-      Just t  -> do
-         liftIO $ putStrLn (show t)
-
    q <- liftIO $ GLFW.windowShouldClose win
    unless q run
 
-
-draw :: GameState ()
-draw = do
+draw :: Double -> GameState ()
+draw time = do
    env <- ask
    state <- get
 
    newGraphics <- liftIO $ mapM renderDelayed (state^.graphics)
+   liftIO $ mapM_ (renderAnimation time) (state^.animations)
 
    graphics .= newGraphics
 
