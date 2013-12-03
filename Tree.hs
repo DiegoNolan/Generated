@@ -11,6 +11,7 @@ module Tree
 
 import           Control.Lens
 import           Control.Applicative ((<$>))
+import           Control.Monad.IO.Class (liftIO)
 import           Control.Monad.Random
 
 import           Color
@@ -19,7 +20,7 @@ import           PrimGraphics
 
 data Tree = Tree (Vec2,Float) [Tree] deriving Show
 
-defTree :: RandomGen g => Vec2 -> Color -> Rand g DelayedGraphic
+defTree :: RandomGen g => Vec2 -> Color -> RandT g IO Graphic
 defTree start col = tree start 0.17 (*0.89) 0.3 25 col
 
 tree :: RandomGen g =>  Vec2  -> -- Start position
@@ -28,12 +29,11 @@ tree :: RandomGen g =>  Vec2  -> -- Start position
                         Float -> -- y step per notch
                         Int   -> -- Notches left
                         Color -> 
-                        Rand g DelayedGraphic
+                        RandT g IO Graphic
 tree p r f h n col = do
-   t <- mkTree p 0 r f h n 0 
-
-   return $ Left $ mkList ( proccessTree t col )
-
+    t <- mkTree p 0 r f h n 0 
+   
+    liftIO $ mkList ( proccessTree t col ) >>= mkGraphic
 
 proccessTree :: Tree -> Color -> IO ()
 proccessTree (Tree (p,r) []) col = circ p r col
@@ -56,7 +56,7 @@ mkTree :: RandomGen g =>   Vec2   -> -- Start position
                            Float  -> -- y step per notch
                            Int    -> -- Notches left
                            Int    -> -- Last split
-                           Rand g Tree
+                           RandT g IO Tree
 mkTree p _ r _ _ 0 _ = return $ Tree (p,r) []
 mkTree p prevA r f h num lstSplit = do
 
@@ -103,14 +103,14 @@ nodes left lstSplit p
 -- a blade of crass can just be like a small tree with no branches, so
 -- we'll use that
 
-grassPatch :: RandomGen g => Vec2 -> Vec2 -> Color -> Rand g DelayedGraphic
+grassPatch :: RandomGen g => Vec2 -> Vec2 -> Color -> RandT g IO Graphic
 grassPatch left@(Vec2 xl _) right@(Vec2 xr _) col = do
 
-   let cnt = round $ (xr - xl) * 20
+    let cnt = round $ (xr - xl) * 20
 
-   blades <- patch left right cnt 0.3 0.6
-   
-   return $ Left $ mkList ( mapM_ (`proccessTree` col) blades)
+    blades <- patch left right cnt 0.3 0.6
+
+    liftIO $ mkList ( mapM_ (`proccessTree` col) blades) >>= mkGraphic
 
 patch :: RandomGen g =>
          Vec2  -> -- left
@@ -118,7 +118,7 @@ patch :: RandomGen g =>
          Int   -> -- blades
          Float -> -- min height
          Float -> -- top height
-         Rand g [Tree]
+         RandT g IO [Tree]
 patch (Vec2 x1 y1) (Vec2 x2 y2) cnt minH maxH = do
 
    let segs = 5
@@ -142,7 +142,7 @@ blade :: RandomGen g =>
          (Float -> Float) ->
          Float -> -- segment height
          Float -> -- angle
-         Rand g Tree
+         RandT g IO Tree
 blade p 0 r _ _ _ = return $ Tree (p,r) []
 blade start cnt r f segH ang = do
 

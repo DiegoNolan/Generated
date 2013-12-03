@@ -21,14 +21,16 @@ data Env = Env
 
 data State = State
    {
-     _graphics  :: [DelayedGraphic]
+     _graphics  :: [Graphic]
    , _animations :: [Animation]
    }
 
 data Event =
-     EventMouseButton !GLFW.Window !GLFW.MouseButton !GLFW.MouseButtonState !GLFW.ModifierKeys
+     EventMouseButton !GLFW.Window !GLFW.MouseButton !GLFW.MouseButtonState
+        !GLFW.ModifierKeys
    | EventCursorPos   !GLFW.Window !Double !Double
-   | EventKey         !GLFW.Window !GLFW.Key !Int !GLFW.KeyState !GLFW.ModifierKeys
+   | EventKey         !GLFW.Window !GLFW.Key !Int !GLFW.KeyState
+        !GLFW.ModifierKeys
 
 makeLenses ''Env
 makeLenses ''State

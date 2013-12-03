@@ -1,9 +1,9 @@
 
 module PrimGraphics
    (
-     DelayedGraphic
-   , renderDelayed
+     Graphic
    , mkList
+   , mkGraphic
    , convexShape
    , circle
    , square
@@ -22,14 +22,7 @@ import           Color
 import           Config
 import           Vec2
 
--- | Delayed Graphic type -----------------------------------------------------
-
--- Left side is an io action to create a display list
-type DelayedGraphic = Either (IO GL.DisplayList) GL.DisplayList
-
-renderDelayed :: DelayedGraphic -> IO DelayedGraphic
-renderDelayed (Left f) = f >>= (renderDelayed . Right)
-renderDelayed dg@(Right d) = GL.callList d >> return dg
+type Graphic = IO ()
 
 circle_sides :: Int
 circle_sides = 50
@@ -49,18 +42,21 @@ vertex x y z = GL.vertex $ GL.Vertex3 x y z
 mkList :: IO () -> IO GL.DisplayList
 mkList f = GL.defineNewList GL.Compile f
 
-------------------------------------------------------------------------------
--- | Functions that create Delayed Graphics ----------------------------------
-------------------------------------------------------------------------------
-circle :: Vec2 -> Float -> Color -> DelayedGraphic
-circle cent r c = Left (mkList $ circ cent r c)
+mkGraphic :: GL.DisplayList -> IO Graphic
+mkGraphic = return . GL.callList
 
-square :: Vec2 -> Vec2 -> Color -> DelayedGraphic
+------------------------------------------------------------------------------
+-- | Functions that create Graphics ------------------------------------------
+------------------------------------------------------------------------------
+circle :: Vec2 -> Float -> Color -> IO Graphic
+circle cent r c = (mkList $ circ cent r c) >>= mkGraphic
+
+square :: Vec2 -> Vec2 -> Color -> IO Graphic
 square tl@(Vec2 x1 y1) br@(Vec2 x2 y2) col =
-   Left (mkList $ do
+   (mkList $ do
             GL.color col
-            convexShape [tl,(Vec2 x2 y1),br,(Vec2 x1 y2)]
-        )
+            convexShape [tl,(Vec2 x2 y1),br,(Vec2 x1 y2)]) >>= mkGraphic
+
 -------------------------------------------------------------------------------
 -- | Functions that can be passed to the mkList function to creat Display lists
 -------------------------------------------------------------------------------
