@@ -5,4 +5,4 @@ in Haskell.
 Here is a screenshot of what you may get.  Sometimes the mountain and trees
 don't look so great.
 
-![ss](https://github.com/DiegoNolan/Generated/ss.png)
+![ss](https://github.com/DiegoNolan/Generated/master/ss.png)
