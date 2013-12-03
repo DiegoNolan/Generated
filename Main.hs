@@ -66,19 +66,15 @@ main = do
             let toRuns =
                   [
                     (mountain (Vec2 (-10) 3) (Vec2 10 3) (-4) (gray 0.3))
-                  , (defTree (Vec2 (-4) (-4)) black)
-                  --, (defTree (Vec2 4 (-4)) black)
-                  --, (defTree (Vec2 (-8) (-4)) black)
-                  --, (defTree (Vec2 8 (-4)) black)
                   , (grassPatch (Vec2 (-12) (-4)) (Vec2 12 (-4)) black)
-                  , (defLeaf (Vec2 0 0) 0 red)
                   ]
-                background = (square (Vec2 (-10) 10) (Vec2 10 0) blueSteel)
+                background = (square (Vec2 (-10) 10) (Vec2 10 (-3.5)) blueSteel)
                 moon = circle (Vec2 7 4) 1 (gray 0.8)
                 (graphics,ng) = runGroup toRuns gen
-                (animTree,nng) = runRand (animatedTree (Vec2 4 (-4)) black) ng
+            animTree1 <- animatedTree ng (Vec2 4 (-4)) black
+            animTree2 <- animatedTree gen (Vec2 (-4) (-4)) black
 
-            runGame env (State (background:moon:graphics) [animTree])
+            runGame env (State (background:moon:graphics) [animTree1, animTree2])
 
             GLFW.destroyWindow win
       GLFW.terminate
@@ -111,7 +107,7 @@ run = do
 
    liftIO $ do
       GLFW.swapBuffers win
-      GL.flush -- not necesarry
+      GL.flush
       GLFW.pollEvents
    processEvents
 

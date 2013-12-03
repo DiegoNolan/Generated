@@ -7,7 +7,6 @@ module Tree
    , grassPatch
    , mkTree
    , defTree
-   , defLeaf
    ) where
 
 import           Control.Lens
@@ -34,6 +33,7 @@ tree p r f h n col = do
    t <- mkTree p 0 r f h n 0 
 
    return $ Left $ mkList ( proccessTree t col )
+
 
 proccessTree :: Tree -> Color -> IO ()
 proccessTree (Tree (p,r) []) col = circ p r col
@@ -97,49 +97,6 @@ nodes left lstSplit p
                            | p < one   = 1
                            | p < two   = 2
                            | otherwise = 3
-
--- | Leaf stuff ---------------------------------------------------------------
-
--- leafs can just be goofy trees
-
-defLeaf ::  RandomGen g =>
-            Vec2        -> -- Start position
-            Float       -> -- angle
-            Color       -> -- color
-            Rand g DelayedGraphic
-defLeaf position angle color = do
-
-   let radFunc 1 = 0.01
-       radFunc 2 = 0.04
-       radFunc 3 = 0.06
-       radFunc 4 = 0.07
-       radFunc 5 = 0.07
-       radFunc 6 = 0.06
-       radFunc 7 = 0.04
-       radFunc _ = 0.00001
-
-   leaf <- cherryLeaf position 7 0.001 radFunc 0.15 angle
-
-   return $ Left $ mkList (proccessTree leaf color)
-
-cherryLeaf ::  RandomGen g =>
-               Vec2        -> -- start position
-               Int         -> -- segments left
-               Float       -> -- radius
-               (Int -> Float) -> -- function to change the radius, gen -> new rad
-               Float       -> -- segment height
-               Float       -> -- angle
-               Rand g Tree
-cherryLeaf start 0 r _ _ _ = return $ Tree (start,r) []
-cherryLeaf start cnt r f segH ang = do
-
-   nAng <- getRandomR $ over both (+ang) (-pi/8,pi/8)
-   
-   let nPos = start `add` rotate (Vec2 0 segH) nAng
-
-   nextPart <-  cherryLeaf nPos (cnt-1) (f cnt) f segH nAng
-
-   return $ Tree (start,r) [nextPart]
 
 -- | Grass Stuff --------------------------------------------------------------
 

@@ -14,20 +14,28 @@ import           Tree
 import           Vec2
 import           PrimGraphics
 
-animatedTree :: RandomGen g => Vec2 -> Color -> Rand g Animation
-animatedTree p col = do
-   restingTree <- mkTree p 0 0.17 (*0.89) 0.3 25 0
+equallySpaced :: Float -> Float -> Int -> [Float]
+equallySpaced l r n = [l,l+gap..r]
+   where gap = (r - l) / (fromIntegral (n-1))
 
-   let trees = map (perturbTree restingTree)
-                  (take 20 $ map (\s -> (\i -> s*(fromIntegral i))) [0.002,0.004..])
-       graphics = map (Left . mkList . (`proccessTree` col)) trees 
+animatedTree :: RandomGen g => g -> Vec2 -> Color -> IO Animation
+animatedTree gen p col = do
+   let (restingTree,ng) = runRand (mkTree p 0 0.17 (*0.89) 0.3 25 0) gen
+       (tOffset, _) = randomR (0,10) gen
 
-   return $ Animation (\time -> graphics !! ((round $ time / (2/20)) `rem` 20))
+   let trees = map (rotatePerturb restingTree) (equallySpaced (-pi/150) (pi/150) 60)
+       graphics = map (Left . mkList . (`proccessTree` col)) trees
 
-perturbTree :: Tree -> (Int -> Float) -> Tree
-perturbTree t f = perturb t f 0
-   where perturb (Tree (Vec2 x y,r) ts) f i = Tree (Vec2 (x + f i) y, r)
-               (map (\t -> perturb t f (i+1)) ts)
+   newGraphics <- mapM renderDelayed graphics
+   let doubledGraphics = newGraphics ++ reverse newGraphics
 
+   return $ Animation (\time -> doubledGraphics !! ((round $ (time + tOffset) /
+               (8/120)) `rem` 120))
 
+rotatePerturb :: Tree -> Float -> Tree
+rotatePerturb t@(Tree (p,_) _) scale = rotPer t p scale
+   where rotPer (Tree (v,r) ts) p s = Tree (nv,r) (map (\t -> rotPer t p s) ts)
+            where nv = rr `add` p
+                  vr = v `sub` p
+                  rr = rotate vr s
 

@@ -25,7 +25,7 @@ mountain tl@(Vec2 x1 y1) tr@(Vec2 x2 y2) bottom color = do
        right = max x1 x2
        dist = right - left
    
-   ys <- mpd y1 y2 2 (/2) 10
+   ys <- mpd y1 y2 5 (/3) 10
 
    -- can actually calculate this length and probably should for efficiency
    let l = length ys
@@ -41,7 +41,7 @@ mountain tl@(Vec2 x1 y1) tr@(Vec2 x2 y2) bottom color = do
 
 mpd :: RandomGen g => Float   -> -- left
                       Float   -> -- right
-                      Float   -> -- half rang
+                      Float   -> -- half range
                       (Float -> Float) -> -- range change on recursion
                       Int     -> -- how deep to go
                       Rand g [Float]
